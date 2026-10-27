@@ -1,8 +1,8 @@
 /**
- * SkyPulse Weather App Logic - Robust, Dynamic Landmark & Visual Theming Edition
+ * SkyPulse Weather App Logic - High-Precision Weather Edition
  * 
- * 1. Dynamic Landmark & Country Visual Theming (Seoul, Tokyo, Paris, New York, London, Rome, Sydney, etc.)
- * 2. Intelligent Geocoding & Korea-first prioritization
+ * 1. Clean Weather-based dynamic theming (Clear, Clouds, Rain, Snow, Thunderstorm)
+ * 2. Intelligent Geocoding & Korea-first prioritization with aliases
  * 3. Race condition elimination with AbortController & Sequential Request ID
  * 4. High-precision meteorological data binding & Comprehensive error handling
  */
@@ -44,130 +44,6 @@ const DEFAULT_WEATHER_INFO = {
   iconDay: '🌤️',
   iconNight: '🌙',
   theme: 'clouds'
-};
-
-// ============================================================================
-// 대표 랜드마크 및 국가 비주얼 테마 데이터베이스
-// ============================================================================
-const LANDMARK_CITY_DATABASE = [
-  // 1. 서울 & 수도권
-  {
-    keys: ['서울', '서울특별시', 'seoul', '종로', '강남', '마포', '용산', '송파'],
-    name: 'N서울타워 & 광화문',
-    icon: '🗼',
-    themeClass: 'landmark-seoul',
-    desc: '대한민국의 심장, 유서 깊은 고궁과 찬란한 현대 스카이라인의 조화'
-  },
-  // 2. 부산
-  {
-    keys: ['부산', '부산광역시', 'busan', '해운대', '광안리'],
-    name: '광안대교 & 해운대',
-    icon: '🌉',
-    themeClass: 'landmark-busan',
-    desc: '푸른 파도와 밤바다의 다이아몬드 브릿지가 빛나는 해양 수도'
-  },
-  // 3. 제주
-  {
-    keys: ['제주', '제주시', '서귀포', '서귀포시', 'jeju'],
-    name: '성산일출봉 & 한라산',
-    icon: '🌋',
-    themeClass: 'landmark-jeju',
-    desc: '유네스코 세계자연유산의 에메랄드빛 바다와 신비로운 화산섬'
-  },
-  // 4. 도쿄
-  {
-    keys: ['도쿄', '도쿄도', 'tokyo', '신주쿠', '시부야'],
-    name: '도쿄타워 & 후지산',
-    icon: '🗼',
-    themeClass: 'landmark-tokyo',
-    desc: '화려한 네온빛 스카이라인과 사쿠라 정취가 어우러진 현대 메트로폴리스'
-  },
-  // 5. 파리
-  {
-    keys: ['파리', 'paris'],
-    name: '에펠탑 & 루브르 박물관',
-    icon: '🗼',
-    themeClass: 'landmark-paris',
-    desc: '예술과 낭만이 흐르는 센강, 영원히 빛나는 낭만의 수도'
-  },
-  // 6. 뉴욕
-  {
-    keys: ['뉴욕', '뉴욕시', 'new york', 'newyork', '맨해튼', 'manhattan'],
-    name: '자유의 여신상 & 맨해튼',
-    icon: '🗽',
-    themeClass: 'landmark-newyork',
-    desc: '잠들지 않는 브로드웨이와 세계 경제·문화의 중심지'
-  },
-  // 7. 런던
-  {
-    keys: ['런던', 'london'],
-    name: '빅벤 & 타워브릿지',
-    icon: '🕰️',
-    themeClass: 'landmark-london',
-    desc: '유서 깊은 왕실 역사와 템스강의 낭만이 깃든 클래식 브리티시'
-  },
-  // 8. 로마
-  {
-    keys: ['로마', 'rome'],
-    name: '콜로세움 & 트레비 분수',
-    icon: '🏛️',
-    themeClass: 'landmark-rome',
-    desc: '고대 제국의 찬란한 숨결과 지중해 햇살이 빛나는 영원의 도시'
-  },
-  // 9. 시드니
-  {
-    keys: ['시드니', 'sydney'],
-    name: '오페라 하우스 & 하버 브릿지',
-    icon: '⛵',
-    themeClass: 'landmark-sydney',
-    desc: '눈부신 남태평양 하버와 조개껍데기 지붕의 청정 해양 도시'
-  }
-];
-
-// 국가 단위 대표 랜드마크 Fallback 매핑 (특정 도시 데이터가 없는 경우)
-const COUNTRY_LANDMARK_MAP = {
-  'KR': {
-    name: '경복궁 & 한국의 아름다운 산천',
-    icon: '🏯',
-    themeClass: 'landmark-seoul',
-    desc: '사계절의 수려한 자연과 반만년 역사가 숨쉬는 대한민국'
-  },
-  'JP': {
-    name: '후지산 & 전통 사찰',
-    icon: '⛩️',
-    themeClass: 'landmark-tokyo',
-    desc: '전통과 현대가 조화를 이루는 고즈넉한 열도의 풍경'
-  },
-  'FR': {
-    name: '프랑스 고성과 예술',
-    icon: '🏰',
-    themeClass: 'landmark-paris',
-    desc: '문화와 미식, 로맨틱한 감성이 살아 숨쉬는 프랑스'
-  },
-  'US': {
-    name: '그랜드 캐니언 & 아메리칸 스카이라인',
-    icon: '🦅',
-    themeClass: 'landmark-newyork',
-    desc: '광활한 대자연과 역동적인 에너지가 넘치는 미국'
-  },
-  'GB': {
-    name: '스톤헨지 & 클래식 브리티시',
-    icon: '🏰',
-    themeClass: 'landmark-london',
-    desc: '클래식한 품격과 오랜 헤리티지를 간직한 영국'
-  },
-  'IT': {
-    name: '베네치아 & 르네상스 유산',
-    icon: '🎭',
-    themeClass: 'landmark-rome',
-    desc: '지중해의 햇살과 문화유산이 찬란한 이탈리아'
-  },
-  'AU': {
-    name: '울루루 & 청정 아웃백',
-    icon: '🦘',
-    themeClass: 'landmark-sydney',
-    desc: '광활한 대륙과 대자연의 생명력이 살아있는 호주'
-  }
 };
 
 // 한국 주요 지명 별칭 사전 (Open-Meteo 지오코딩 DB 명칭 보정)
@@ -302,12 +178,6 @@ const feelsLikeTemp = document.getElementById('feels-like-temp');
 const tempMax = document.getElementById('temp-max');
 const tempMin = document.getElementById('temp-min');
 
-// 랜드마크 배너 DOM
-const landmarkBanner = document.getElementById('landmark-banner');
-const landmarkIcon = document.getElementById('landmark-icon');
-const landmarkTitle = document.getElementById('landmark-title');
-const landmarkDesc = document.getElementById('landmark-desc');
-
 // 상세 지표 DOM
 const metricHumidity = document.getElementById('metric-humidity');
 const metricWind = document.getElementById('metric-wind');
@@ -417,7 +287,7 @@ function validateQuery(query) {
 }
 
 // ============================================================================
-// 핵심 날씨 검색 로직
+// 핵심 날씨 검색 로직 (연속 검색 Race Condition 차단)
 // ============================================================================
 async function executeCitySearch(rawCityName, shouldUpdateInput = false) {
   const validation = validateQuery(rawCityName);
@@ -459,7 +329,7 @@ async function executeCitySearch(rawCityName, shouldUpdateInput = false) {
       return;
     }
 
-    const { latitude, longitude, name, country, country_code, timezone, matchedDisplayName } = location;
+    const { latitude, longitude, name, country, timezone, matchedDisplayName } = location;
 
     const weatherData = await fetchForecastData(latitude, longitude, timezone || 'auto', controller.signal);
 
@@ -468,9 +338,7 @@ async function executeCitySearch(rawCityName, shouldUpdateInput = false) {
     renderWeatherData({
       weather: weatherData,
       cityName: matchedDisplayName || name,
-      rawSearchQuery: searchQuery,
       countryName: country || '대한민국',
-      countryCode: country_code || (country === '대한민국' ? 'KR' : ''),
       targetTimezone: timezone || weatherData.timezone || 'Asia/Seoul'
     });
 
@@ -493,7 +361,7 @@ async function executeCitySearch(rawCityName, shouldUpdateInput = false) {
 }
 
 // ============================================================================
-// 다단계 지오코딩 위치 결정 함수
+// 다단계 지오코딩 위치 결정 함수 (한국 우선 정렬)
 // ============================================================================
 async function resolveLocation(query, signal) {
   const candidates = [];
@@ -583,9 +451,9 @@ async function fetchForecastData(lat, lon, timezone, signal) {
 }
 
 // ============================================================================
-// 날씨 데이터 및 랜드마크 테마 렌더링
+// 날씨 데이터 렌더링 & 날씨 기반 테마 적용
 // ============================================================================
-function renderWeatherData({ weather, cityName, rawSearchQuery, countryName, countryCode, targetTimezone }) {
+function renderWeatherData({ weather, cityName, countryName, targetTimezone }) {
   const current = weather.current;
   const daily = weather.daily;
   const hourly = weather.hourly;
@@ -645,15 +513,8 @@ function renderWeatherData({ weather, cityName, rawSearchQuery, countryName, cou
   const pressVal = typeof current.surface_pressure === 'number' ? Math.round(current.surface_pressure) : '--';
   metricPressure.textContent = `${pressVal} hPa`;
 
-  // 5. [핵심 기능] 랜드마크 판별 & 동적 비주얼 테마 적용
-  updateLandmarkAndVisualTheme({
-    cityName,
-    rawSearchQuery,
-    countryName,
-    countryCode,
-    weatherTheme: weatherMeta.theme,
-    isDay
-  });
+  // 5. 날씨 상태별 배경 테마 적용 (맑음 낮/밤, 흐림, 비, 눈, 뇌우)
+  updateBackgroundTheme(weatherMeta.theme, isDay);
 
   // 6. 시간대별 예보 렌더링
   renderHourlyForecast(hourly, current.time);
@@ -669,84 +530,10 @@ function renderWeatherData({ weather, cityName, rawSearchQuery, countryName, cou
   }
 }
 
-// ============================================================================
-// [핵심] 맞춤 랜드마크 및 비주얼 테마 전환 로직 (Fallback 포함)
-// ============================================================================
-function updateLandmarkAndVisualTheme({ cityName, rawSearchQuery, countryName, countryCode, weatherTheme, isDay }) {
-  const landmarkInfo = resolveLandmark({
-    cityName,
-    rawSearchQuery,
-    countryName,
-    countryCode,
-    weatherTheme,
-    isDay
-  });
+// 날씨 상태 기반 배경 테마 적용
+function updateBackgroundTheme(themeKey, isDay) {
+  document.body.className = '';
 
-  // 1. 랜드마크 배너 UI 갱신
-  if (landmarkIcon) landmarkIcon.textContent = landmarkInfo.icon;
-  if (landmarkTitle) landmarkTitle.textContent = landmarkInfo.name;
-  if (landmarkDesc) landmarkDesc.textContent = landmarkInfo.desc;
-
-  // 2. 전체 페이지 비주얼 테마 클래스 적용
-  document.body.className = ''; // 기존 테마 초기화
-
-  // 랜드마크 전용 테마 클래스가 있으면 우선 적용
-  if (landmarkInfo.themeClass) {
-    document.body.classList.add(landmarkInfo.themeClass);
-  } else {
-    // 없으면 날씨 기본 테마로 Fallback
-    applyWeatherFallbackTheme(weatherTheme, isDay);
-  }
-}
-
-// 랜드마크 매칭 알고리즘 (도시 -> 국가 -> 날씨 Fallback 3단계)
-function resolveLandmark({ cityName, rawSearchQuery, countryName, countryCode, weatherTheme, isDay }) {
-  const searchTargets = [
-    (cityName || '').toLowerCase(),
-    (rawSearchQuery || '').toLowerCase()
-  ];
-
-  // 1단계: 도시별 주요 랜드마크 탐색
-  for (const lm of LANDMARK_CITY_DATABASE) {
-    const isMatched = lm.keys.some(key => 
-      searchTargets.some(target => target.includes(key.toLowerCase()))
-    );
-    if (isMatched) {
-      return lm;
-    }
-  }
-
-  // 2단계: 국가별 대표 랜드마크 Fallback (KR, JP, FR, US, GB, IT, AU 등)
-  const normalizedCountryCode = (countryCode || '').toUpperCase();
-  if (COUNTRY_LANDMARK_MAP[normalizedCountryCode]) {
-    return COUNTRY_LANDMARK_MAP[normalizedCountryCode];
-  }
-
-  // 2단계-2: 대한민국 지역인 경우 한국 기본 랜드마크 적용
-  if (normalizedCountryCode === 'KR' || countryName === '대한민국') {
-    return COUNTRY_LANDMARK_MAP['KR'];
-  }
-
-  // 3단계: 특정 랜드마크 데이터가 없는 일반 지역 Fallback
-  // 날씨 상태에 맞춘 감성적인 기본 풍경 테마 적용
-  let fallbackIcon = '🏞️';
-  if (weatherTheme === 'clear') fallbackIcon = isDay ? '☀️' : '🌌';
-  else if (weatherTheme === 'rain') fallbackIcon = '🌧️';
-  else if (weatherTheme === 'snow') fallbackIcon = '❄️';
-  else if (weatherTheme === 'thunder') fallbackIcon = '⚡';
-
-  const cleanCity = (cityName || '').split('(')[0].trim() || '해당 지역';
-
-  return {
-    name: `${cleanCity}의 자연과 도시 풍경`,
-    icon: fallbackIcon,
-    themeClass: null, // 날씨 기본 테마 적용
-    desc: `${countryName || '전세계'}의 고유한 아름다움과 정취를 간직한 지역입니다.`
-  };
-}
-
-// 날씨 상태 기반 기본 테마 클래스 적용
-function applyWeatherFallbackTheme(themeKey, isDay) {
   if (themeKey === 'clear') {
     document.body.classList.add(isDay ? 'theme-clear-day' : 'theme-clear-night');
   } else if (themeKey === 'clouds') {
@@ -778,10 +565,6 @@ function resetWeatherCardData() {
   metricWind.textContent = '-- m/s';
   metricPrecipitation.textContent = '-- mm';
   metricPressure.textContent = '-- hPa';
-
-  if (landmarkIcon) landmarkIcon.textContent = '📍';
-  if (landmarkTitle) landmarkTitle.textContent = '랜드마크 탐색 중...';
-  if (landmarkDesc) landmarkDesc.textContent = '해당 지역의 상징 비주얼을 불러오고 있습니다.';
 
   hourlyForecastList.innerHTML = '';
   dailyForecastList.innerHTML = '';
@@ -923,7 +706,6 @@ function handleCurrentLocation() {
       try {
         let locName = '현재 위치';
         let countryName = '대한민국';
-        let countryCode = 'KR';
 
         try {
           const revUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`;
@@ -932,7 +714,6 @@ function handleCurrentLocation() {
             const revData = await revRes.json();
             locName = revData.locality || revData.city || revData.principalSubdivision || '현재 위치';
             countryName = revData.countryName || '대한민국';
-            countryCode = revData.countryCode || 'KR';
           }
         } catch {
           locName = `내 위치 (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
@@ -948,9 +729,7 @@ function handleCurrentLocation() {
         renderWeatherData({
           weather: weatherData,
           cityName: locName,
-          rawSearchQuery: locName,
           countryName: countryName,
-          countryCode: countryCode,
           targetTimezone: weatherData.timezone || 'Asia/Seoul'
         });
 
