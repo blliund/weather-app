@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyPulse | 실시간 날씨 검색</title>
+  <meta name="description" content="전 세계 도시 및 지역의 현재 날씨, 체감 온도, 습도, 풍속 및 주간 예보를 실시간으로 검색하고 확인하세요.">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-default">
+  <!-- 배경 빛 효과 및 애니메이션 데코 -->
+  <div class="background-decorations" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- 헤더 영역 -->
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-icon">⛅</span>
+        <h1>SkyPulse <span>Weather</span></h1>
+      </div>
+      <p class="header-subtitle">전 세계 어디든 원하는 지역의 실시간 날씨를 빠르게 확인하세요</p>
+    </header>
+
+    <!-- 검색 & 필터 컨트롤 -->
+    <section class="search-section" aria-label="날씨 검색">
+      <form id="search-form" class="search-form" role="search" onsubmit="return false;">
+        <div class="search-bar">
+          <i data-lucide="search" class="search-icon"></i>
+          <input 
+            type="text" 
+            id="city-input" 
+            placeholder="도시 또는 지역명을 입력하세요 (예: 서울, 제주, 도쿄, 파리...)" 
+            autocomplete="off"
+            spellcheck="false"
+            required
+          />
+          <button type="button" id="clear-input-btn" class="clear-btn" aria-label="입력 지우기" hidden>
+            <i data-lucide="x"></i>
+          </button>
+          <button type="submit" id="search-btn" class="btn-primary" aria-label="날씨 검색">
+            <span>검색</span>
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+        <button type="button" id="current-location-btn" class="btn-location" title="현재 내 위치 날씨 보기">
+          <i data-lucide="crosshair"></i>
+          <span>내 위치</span>
+        </button>
+      </form>
+
+      <!-- 인기 추천 도시 퀵 태그 -->
+      <div class="quick-cities" aria-label="인기 도시 빠른 검색">
+        <span class="quick-label"><i data-lucide="sparkles"></i> 인기 도시:</span>
+        <div class="tags-wrapper">
+          <button type="button" class="tag-btn" data-city="서울">서울</button>
+          <button type="button" class="tag-btn" data-city="부산">부산</button>
+          <button type="button" class="tag-btn" data-city="제주">제주</button>
+          <button type="button" class="tag-btn" data-city="도쿄">도쿄</button>
+          <button type="button" class="tag-btn" data-city="뉴욕">뉴욕</button>
+          <button type="button" class="tag-btn" data-city="파리">파리</button>
+          <button type="button" class="tag-btn" data-city="런던">런던</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 메인 콘텐츠 영역 (로딩, 에러, 초기안내, 날씨 결과) -->
+    <main class="weather-content" id="weather-content">
+      
+      <!-- 1. 초기 상태 안내 카드 -->
+      <div id="initial-state" class="status-card active">
+        <div class="status-visual">
+          <div class="floating-icon">🌍</div>
+        </div>
+        <h2>궁금한 지역을 검색해보세요</h2>
+        <p>상단 검색창에 도시 이름을 입력하거나, [내 위치] 버튼을 눌러 현재 있는 곳의 날씨를 바로 확인할 수 있습니다.</p>
+        <div class="feature-pills">
+          <span><i data-lucide="zap"></i> 실시간 기상 데이터</span>
+          <span><i data-lucide="shield-check"></i> 무료 오픈 API (Open-Meteo)</span>
+          <span><i data-lucide="clock"></i> 시간대별 & 주간 예보</span>
+        </div>
+      </div>
+
+      <!-- 2. 로딩 상태 스피너 -->
+      <div id="loading-state" class="status-card" hidden>
+        <div class="spinner"></div>
+        <h2 id="loading-message">날씨 데이터를 불러오는 중입니다...</h2>
+        <p>기상 관측 위성 및 지오코딩 서비스와 통신하고 있습니다.</p>
+      </div>
+
+      <!-- 3. 에러 & 검색 실패 알림 카드 -->
+      <div id="error-state" class="status-card error-card" hidden>
+        <div class="status-visual error-icon-wrapper">
+          <i data-lucide="alert-triangle" class="error-svg-icon"></i>
+        </div>
+        <h2 id="error-title">지역을 찾을 수 없습니다</h2>
+        <p id="error-message">입력하신 지역명을 다시 한번 확인해주세요.<br>철자가 올바른지, 혹은 더 널리 알려진 시/군/구 명칭으로 검색해보세요.</p>
+        <div class="error-actions">
+          <button type="button" id="retry-btn" class="btn-retry">
+            <i data-lucide="rotate-ccw"></i> 다시 시도하기
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. 실제 날씨 정보 표시 카드 (검색 성공 시 활성화) -->
+      <section id="weather-card" class="weather-card" hidden aria-live="polite">
+        
+        <!-- 위치 및 일시 상단 헤더 -->
+        <div class="weather-top-bar">
+          <div class="location-info">
+            <div class="city-name-wrapper">
+              <i data-lucide="map-pin" class="pin-icon"></i>
+              <h2 id="display-city">서울</h2>
+              <span id="display-country" class="country-badge">대한민국</span>
+            </div>
+            <p id="display-datetime" class="datetime-text">2026. 10. 27. 화요일</p>
+          </div>
+          <div class="weather-condition-pill" id="condition-pill">
+            <span id="condition-tag-text">맑음</span>
+          </div>
+        </div>
+
+        <!-- 동적 대표 랜드마크 비주얼 배너 -->
+        <div id="landmark-banner" class="landmark-banner">
+          <div class="landmark-visual">
+            <span id="landmark-icon" class="landmark-icon">🗼</span>
+          </div>
+          <div class="landmark-info">
+            <div class="landmark-title-row">
+              <span class="landmark-tag-label"><i data-lucide="compass"></i> 대표 랜드마크</span>
+              <h3 id="landmark-title">N서울타워 & 광화문</h3>
+            </div>
+            <p id="landmark-desc" class="landmark-desc">대한민국의 심장, 전통과 첨단이 공존하는 수도</p>
+          </div>
+        </div>
+
+        <!-- 핵심 날씨 디스플레이 (기온, 메인 이모지/아이콘, 요약) -->
+        <div class="weather-hero">
+          <div class="hero-left">
+            <div class="weather-icon-container">
+              <div id="weather-emoji" class="large-weather-emoji">☀️</div>
+              <div class="icon-glow"></div>
+            </div>
+          </div>
+          <div class="hero-center">
+            <div class="temp-wrapper">
+              <span id="current-temp" class="current-temp">18</span>
+              <span class="temp-unit">°C</span>
+            </div>
+            <p id="weather-description" class="weather-desc">대체로 맑고 쾌적한 날씨</p>
+            <p class="feels-like-text">
+              체감 온도 <strong id="feels-like-temp">17.8°C</strong> · 
+              최고 <span id="temp-max">21°C</span> / 최저 <span id="temp-min">12°C</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- 세부 기상 지표 그리드 -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon humidity-icon">
+              <i data-lucide="droplets"></i>
+            </div>
+            <div class="metric-meta">
+              <span class="metric-label">습도</span>
+              <span id="metric-humidity" class="metric-val">55%</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon wind-icon">
+              <i data-lucide="wind"></i>
+            </div>
+            <div class="metric-meta">
+              <span class="metric-label">풍속</span>
+              <span id="metric-wind" class="metric-val">3.2 km/h</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon rain-icon">
+              <i data-lucide="cloud-rain"></i>
+            </div>
+            <div class="metric-meta">
+              <span class="metric-label">강수량</span>
+              <span id="metric-precipitation" class="metric-val">0 mm</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon pressure-icon">
+              <i data-lucide="gauge"></i>
+            </div>
+            <div class="metric-meta">
+              <span class="metric-label">기압</span>
+              <span id="metric-pressure" class="metric-val">1018 hPa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 24시간 시간별 기온 슬라이더 -->
+        <div class="forecast-section">
+          <div class="section-title">
+            <i data-lucide="clock"></i>
+            <h3>오늘의 시간별 날씨 예보</h3>
+          </div>
+          <div class="hourly-forecast-list" id="hourly-forecast-list">
+            <!-- JS 동적 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 주간 5일 날씨 예보 -->
+        <div class="forecast-section">
+          <div class="section-title">
+            <i data-lucide="calendar"></i>
+            <h3>주간 7일 날씨 예보</h3>
+          </div>
+          <div class="daily-forecast-list" id="daily-forecast-list">
+            <!-- JS 동적 렌더링 -->
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="app-footer">
+      <p>날씨 데이터 제공: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo API</a> (API 키 없이 무료 제공되는 오픈 기상 데이터)</p>
+      <p class="copyright">© 2026 SkyPulse Weather · Crafted with Modern Web Standards</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
